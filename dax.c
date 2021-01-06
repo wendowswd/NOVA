@@ -38,7 +38,7 @@ do_dax_mapping_read(struct file *filp, char __user *buf,
 	index = pos >> PAGE_SHIFT;
 	offset = pos & ~PAGE_MASK;
 
-	if (!access_ok(VERIFY_WRITE, buf, len)) {
+	if (!access_ok(buf, len)) {
 		error = -EFAULT;
 		goto out;
 	}
@@ -314,7 +314,7 @@ ssize_t nova_cow_file_write(struct file *filp,
 	if (need_mutex)
 		mutex_lock(&inode->i_mutex);
 
-	if (!access_ok(VERIFY_READ, buf, len)) {
+	if (!access_ok(buf, len)) {
 		ret = -EFAULT;
 		goto out;
 	}
