@@ -1204,12 +1204,12 @@ static void nova_setsize(struct inode *inode, loff_t oldsize, loff_t newsize)
 	nova_truncate_file_blocks(inode, newsize, oldsize);
 }
 
-int nova_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		         struct kstat *stat)
+int nova_getattr(const struct path *path, struct kstat *stat,
+		unsigned int request_mask, unsigned int query_flags)
 {
 	struct inode *inode;
 
-	inode = dentry->d_inode;
+	inode = d_inode(path->dentry);
 	generic_fillattr(inode, stat);
 	/* stat->blocks should be the number of 512B blocks */
 	stat->blocks = (inode->i_blocks << inode->i_sb->s_blocksize_bits) >> 9;
