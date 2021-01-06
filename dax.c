@@ -742,7 +742,7 @@ static int nova_get_mmap_addr(struct inode *inode, struct vm_area_struct *vma,
 /* OOM err return with dax file fault handlers doesn't mean anything.
  * It would just cause the OS to go an unnecessary killing spree !
  */
-static int __nova_dax_file_fault(struct vm_area_struct *vma,
+static vm_fault_t __nova_dax_file_fault(struct vm_area_struct *vma,
 				  struct vm_fault *vmf)
 {
 	struct address_space *mapping = vma->vm_file->f_mapping;
@@ -751,7 +751,7 @@ static int __nova_dax_file_fault(struct vm_area_struct *vma,
 	void *dax_mem;
 	unsigned long dax_pfn = 0;
 	int err;
-	int ret = VM_FAULT_SIGBUS;
+	vm_fault_t ret = VM_FAULT_SIGBUS;
 
 	mutex_lock(&inode->i_mutex);
 	size = (i_size_read(inode) + PAGE_SIZE - 1) >> PAGE_SHIFT;
@@ -759,7 +759,7 @@ static int __nova_dax_file_fault(struct vm_area_struct *vma,
 		nova_dbg("[%s:%d] pgoff >= size(SIGBUS). vm_start(0x%lx),"
 			" vm_end(0x%lx), pgoff(0x%lx), VA(%lx), size 0x%lx\n",
 			__func__, __LINE__, vma->vm_start, vma->vm_end,
-			vmf->pgoff, (unsigned long)vmf->virtual_address, size);
+			vmf->pgoff, (unsigned long)vmf->address, size);
 		goto out;
 	}
 
@@ -769,7 +769,7 @@ static int __nova_dax_file_fault(struct vm_area_struct *vma,
 		nova_dbg("[%s:%d] get_mmap_addr failed. vm_start(0x%lx),"
 			" vm_end(0x%lx), pgoff(0x%lx), VA(%lx)\n",
 			__func__, __LINE__, vma->vm_start, vma->vm_end,
-			vmf->pgoff, (unsigned long)vmf->virtual_address);
+			vmf->pgoff, (unsigned long)vmf->address);
 		goto out;
 	}
 
@@ -780,14 +780,14 @@ static int __nova_dax_file_fault(struct vm_area_struct *vma,
 			"pgoff(0x%lx), vma pgoff(0x%lx), "
 			"VA(0x%lx)->PA(0x%lx)\n",
 			inode->i_ino, vma->vm_start, vma->vm_end, vmf->pgoff,
-			vma->vm_pgoff, (unsigned long)vmf->virtual_address,
+			vma->vm_pgoff, (unsigned long)vmf->address,
 			(unsigned long)dax_pfn << PAGE_SHIFT);
 
 	if (dax_pfn == 0)
 		goto out;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
-	err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address,
+	err = vmf_insert_mixed(vma, (unsigned long)vmf->address,
 		__pfn_to_pfn_t(dax_pfn, PFN_DEV));
 #else
 	err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address, dax_pfn);
@@ -809,13 +809,13 @@ out:
 	return ret;
 }
 
-static int nova_dax_file_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+static vm_fault_t nova_dax_file_fault(struct vm_fault *vmf)
 {
-	int ret = 0;
+	vm_fault_t ret = 0;
 	timing_t fault_time;
 
 	NOVA_START_TIMING(mmap_fault_t, fault_time);
-	ret = __nova_dax_file_fault(vma, vmf);
+	ret = __nova_dax_file_fault(vmf->vma, vmf);
 	NOVA_END_TIMING(mmap_fault_t, fault_time);
 	return ret;
 }
