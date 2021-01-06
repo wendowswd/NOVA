@@ -18,6 +18,8 @@
  * 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <linux/time64.h>
+#include <linux/timekeeping.h>
 
 /* ======================= Timing ========================= */
 enum timing_category {
@@ -106,15 +108,15 @@ extern unsigned long fast_gc_pages;
 extern unsigned long thorough_gc_pages;
 extern unsigned long fsync_pages;
 
-typedef struct timespec timing_t;
+typedef struct timespec64 timing_t;
 
 #define NOVA_START_TIMING(name, start) \
-	{if (measure_timing) getrawmonotonic(&start);}
+	{if (measure_timing) ktime_get_real_ts64(&start);}
 
 #define NOVA_END_TIMING(name, start) \
 	{if (measure_timing) { \
 		timing_t end; \
-		getrawmonotonic(&end); \
+		ktime_get_real_ts64(&end); \
 		Timingstats[name] += \
 			(end.tv_sec - start.tv_sec) * 1000000000 + \
 			(end.tv_nsec - start.tv_nsec); \
