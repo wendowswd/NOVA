@@ -336,8 +336,9 @@ ssize_t nova_cow_file_write(struct file *filp,
 	if (ret) {
 		goto out;
 	}
-	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
-	time = CURRENT_TIME_SEC.tv_sec;
+	ktime_get_real_ts64(&inode->i_mtime);
+    inode->i_ctime = inode->i_mtime;
+	time = inode->i_ctime.tv_sec;
 
 	nova_dbgv("%s: inode %lu, offset %lld, count %lu\n",
 			__func__, inode->i_ino,	pos, count);
@@ -545,8 +546,10 @@ ssize_t nova_copy_to_nvmm(struct super_block *sb, struct inode *inode,
 	offset = pos & (sb->s_blocksize - 1);
 	num_blocks = ((count + offset - 1) >> sb->s_blocksize_bits) + 1;
 	total_blocks = num_blocks;
-	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
-	time = CURRENT_TIME_SEC.tv_sec;
+
+    ktime_get_real_ts64(&inode->i_mtime);
+    inode->i_ctime = inode->i_mtime;
+	time = inode->i_ctime.tv_sec;
 
 	nova_dbgv("%s: ino %lu, block %llu, offset %lu, count %lu\n",
 		__func__, inode->i_ino, pos >> sb->s_blocksize_bits,

@@ -411,7 +411,8 @@ static void nova_truncate_file_blocks(struct inode *inode, loff_t start,
 	unsigned long first_blocknr, last_blocknr;
 	int freed = 0;
 
-	inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+    ktime_get_real_ts64(&inode->i_mtime);
+    inode->i_ctime = inode->i_mtime;
 
 	nova_dbg_verbose("truncate: pi %p iblocks %llx %llx %llx %llx\n", pi,
 			 pi->i_blocks, start, end, pi->i_size);
@@ -943,7 +944,9 @@ void nova_evict_inode(struct inode *inode)
 		}
 		pi = NULL; /* we no longer own the nova_inode */
 
-		inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+        ktime_get_real_ts64(&inode->i_mtime);
+        inode->i_ctime = inode->i_mtime;
+        
 		inode->i_size = 0;
 	}
 out:

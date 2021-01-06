@@ -72,7 +72,7 @@ long nova_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 		flags = flags & FS_FL_USER_MODIFIABLE;
 		flags |= oldflags & ~FS_FL_USER_MODIFIABLE;
-		inode->i_ctime = CURRENT_TIME_SEC;
+        ktime_get_real_ts64(&inode->i_ctime);
 		nova_set_inode_flags(inode, pi, flags);
 
 		nova_memunlock_inode(sb, pi);
@@ -100,7 +100,7 @@ flags_out:
 			goto setversion_out;
 		}
 		mutex_lock(&inode->i_mutex);
-		inode->i_ctime = CURRENT_TIME_SEC;
+        ktime_get_real_ts64(&inode->i_ctime);
 		inode->i_generation = generation;
 
 		nova_memunlock_inode(sb, pi);
