@@ -633,7 +633,7 @@ end_rmdir:
 
 static int nova_rename(struct inode *old_dir,
 			struct dentry *old_dentry,
-			struct inode *new_dir, struct dentry *new_dentry)
+			struct inode *new_dir, struct dentry *new_dentry, unsigned int flags)
 {
 	struct inode *old_inode = old_dentry->d_inode;
 	struct inode *new_inode = new_dentry->d_inode;
@@ -683,7 +683,7 @@ static int nova_rename(struct inode *old_dir,
 	old_pidir = nova_get_inode(sb, old_dir);
 
 	old_pi = nova_get_inode(sb, old_inode);
-	old_inode->i_ctime = CURRENT_TIME;
+    ktime_get_real_ts64(&old_inode->i_ctime);
 	err = nova_append_link_change_entry(sb, old_pi,
 						old_inode, 0, &old_pi_tail);
 	if (err)
@@ -731,7 +731,7 @@ static int nova_rename(struct inode *old_dir,
 
 	if (new_inode) {
 		new_pi = nova_get_inode(sb, new_inode);
-		new_inode->i_ctime = CURRENT_TIME;
+        ktime_get_real_ts64(&new_inode->i_ctime);
 
 		if (S_ISDIR(old_inode->i_mode)) {
 			if (new_inode->i_nlink)
