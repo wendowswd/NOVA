@@ -518,7 +518,7 @@ int nova_assign_write_entry(struct super_block *sb,
 				nova_free_data_blocks(sb, pi, old_nvmm, 1);
 				pi->i_blocks--;
 			}
-			radix_tree_replace_slot(pentry, entry);
+			radix_tree_replace_slot(&sih->tree, pentry, entry);
 		} else {
 			ret = radix_tree_insert(&sih->tree, curr_pgoff, entry);
 			if (ret) {
@@ -1026,7 +1026,8 @@ struct inode *nova_new_vfs_inode(enum nova_new_inode_type type,
 
 	inode_init_owner(inode, dir, mode);
 	inode->i_blocks = inode->i_size = 0;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+    ktime_get_real_ts64(&inode->i_mtime);
+    inode->i_atime = inode->i_ctime = inode->i_mtime;
 
 	inode->i_generation = atomic_add_return(1, &sbi->next_generation);
 	inode->i_size = size;
@@ -1332,9 +1333,9 @@ int nova_notify_change(struct dentry *dentry, struct iattr *attr)
 	if (!pi)
 		return -EACCES;
 
-	ret = inode_change_ok(inode, attr);
+	/*ret = inode_change_ok(inode, attr);
 	if (ret)
-		return ret;
+		return ret;*/
 
 	/* Update inode with attr except for size */
 	setattr_copy(inode, attr);
@@ -1389,9 +1390,10 @@ void nova_set_inode_flags(struct inode *inode, struct nova_inode *pi,
 }
 
 static ssize_t nova_direct_IO(struct kiocb *iocb,
-	struct iov_iter *iter, loff_t offset)
+	struct iov_iter *iter)
 {
 	struct file *filp = iocb->ki_filp;
+    loff_t offset = iocb->ki_pos;
 	loff_t end = offset;
 	size_t count = iov_iter_count(iter);
 	ssize_t ret = -EINVAL;
@@ -1656,7 +1658,7 @@ int nova_gc_assign_file_entry(struct super_block *sb,
 		if (pentry) {
 			temp = radix_tree_deref_slot(pentry);
 			if (temp == old_entry)
-				radix_tree_replace_slot(pentry, new_entry);
+				radix_tree_replace_slot(&sih->tree, pentry, new_entry);
 		}
 	}
 
@@ -1681,7 +1683,7 @@ static int nova_gc_assign_dentry(struct super_block *sb,
 	if (pentry) {
 		temp = radix_tree_deref_slot(pentry);
 		if (temp == old_dentry)
-			radix_tree_replace_slot(pentry, new_dentry);
+			radix_tree_replace_slot(&sih->tree, pentry, new_dentry);
 	}
 
 	return ret;
