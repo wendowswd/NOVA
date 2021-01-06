@@ -21,6 +21,8 @@
 #include <linux/fs.h>
 #include <linux/namei.h>
 #include <linux/version.h>
+#include <linux/delayed_call.h>
+
 #include "nova.h"
 
 int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
@@ -83,7 +85,7 @@ static int nova_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 	return readlink_copy(buffer, buflen, blockp);
 }
 
-static const char *nova_get_link(struct dentry *dentry, struct inode *inode, void **cookie)
+static const char *nova_get_link(struct dentry *dentry, struct inode *inode, struct delayed_call *cookie)
 {
 	struct nova_file_write_entry *entry;
 	struct super_block *sb = inode->i_sb;
