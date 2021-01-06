@@ -18,6 +18,8 @@
  * warranty of any kind, whether express or implied.
  */
 
+#include <linux/proc_fs.h>
+
 #include "nova.h"
 
 const char *proc_dirname = "fs/NOVA";
@@ -59,13 +61,12 @@ ssize_t nova_seq_clear_stats(struct file *filp, const char __user *buf,
 	return len;
 }
 
-static const struct file_operations nova_seq_timing_fops = {
-	.owner		= THIS_MODULE,
-	.open		= nova_seq_timing_open,
-	.read		= seq_read,
-	.write		= nova_seq_clear_stats,
-	.llseek		= seq_lseek,
-	.release	= single_release,
+static const struct proc_ops nova_seq_timing_fops = {
+	.proc_open		= nova_seq_timing_open,
+	.proc_read		= seq_read,
+	.proc_write		= nova_seq_clear_stats,
+	.proc_lseek		= seq_lseek,
+	.proc_release	= single_release,
 };
 
 void nova_sysfs_init(struct super_block *sb)
