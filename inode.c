@@ -1350,7 +1350,7 @@ int nova_notify_change(struct dentry *dentry, struct iattr *attr)
 	if (ia_valid == 0)
 		return ret;
 
-	/* We are holding i_mutex so OK to append the log */
+	/* We are holding i_rwsem so OK to append the log */
 	new_tail = nova_append_setattr_entry(sb, pi, inode, attr, 0);
 
 	nova_update_tail(pi, new_tail);

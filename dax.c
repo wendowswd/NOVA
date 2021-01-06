@@ -141,7 +141,7 @@ out:
 /*
  * Wrappers. We need to use the rcu read lock to avoid
  * concurrent truncate operation. No problem for write because we held
- * i_mutex.
+ * i_rwsem.
  */
 ssize_t nova_dax_file_read(struct file *filp, char __user *buf,
 			    size_t len, loff_t *ppos)
@@ -312,7 +312,7 @@ ssize_t nova_cow_file_write(struct file *filp,
 
 	sb_start_write(inode->i_sb);
 	if (need_mutex)
-		mutex_lock(&inode->i_mutex);
+		down_write(&inode->i_rwsem);
 
 	if (!access_ok(buf, len)) {
 		ret = -EFAULT;
@@ -452,7 +452,7 @@ ssize_t nova_cow_file_write(struct file *filp,
 
 out:
 	if (need_mutex)
-		mutex_unlock(&inode->i_mutex);
+		up_write(&inode->i_rwsem);
 	sb_end_write(inode->i_sb);
 	NOVA_END_TIMING(cow_write_t, cow_write_time);
 	cow_write_bytes += written;
@@ -753,7 +753,7 @@ static vm_fault_t __nova_dax_file_fault(struct vm_area_struct *vma,
 	int err;
 	vm_fault_t ret = VM_FAULT_SIGBUS;
 
-	mutex_lock(&inode->i_mutex);
+	down_write(&inode->i_rwsem);
 	size = (i_size_read(inode) + PAGE_SIZE - 1) >> PAGE_SHIFT;
 	if (vmf->pgoff >= size) {
 		nova_dbg("[%s:%d] pgoff >= size(SIGBUS). vm_start(0x%lx),"
@@ -805,7 +805,7 @@ static vm_fault_t __nova_dax_file_fault(struct vm_area_struct *vma,
 	ret = VM_FAULT_NOPAGE;
 
 out:
-	mutex_unlock(&inode->i_mutex);
+	up_write(&inode->i_rwsem);
 	return ret;
 }
 
