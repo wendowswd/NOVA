@@ -63,11 +63,11 @@
 #endif
 
 /* #define nova_dbg(s, args...)         pr_debug(s, ## args) */
-#define nova_dbg(s, args ...)           pr_info(s, ## args)
+#define nova_dbg(s, args ...)           printk(KERN_INFO, s, ## args)
 #define nova_dbg1(s, args ...)
 #define nova_err(sb, s, args ...)       nova_error_mng(sb, s, ## args)
-#define nova_warn(s, args ...)          pr_warning(s, ## args)
-#define nova_info(s, args ...)          pr_info(s, ## args)
+#define nova_warn(s, args ...)          printk(KERN_WARNING, s, ## args)
+#define nova_info(s, args ...)          printk(KERN_INFO, s, ## args)
 
 extern unsigned int nova_dbgmask;
 #define NOVA_DBGMASK_MMAPHUGE          (0x00000001)

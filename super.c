@@ -36,6 +36,12 @@
 #include <linux/random.h>
 #include <linux/cred.h>
 #include <linux/list.h>
+#include <uapi/linux/mount.h>
+#include <linux/dax.h>
+#include <linux/iversion.h>
+#include <linux/blkdev.h>
+#include <linux/cdev.h>
+
 #include "nova.h"
 
 int measure_timing = 0;
@@ -84,6 +90,16 @@ static void nova_set_blocksize(struct super_block *sb, unsigned long size)
 	sb->s_blocksize = (1 << bits);
 }
 
+struct dax_device {
+	struct hlist_node list;
+	struct inode inode;
+	struct cdev cdev;
+	const char *host;
+	void *private;
+	unsigned long flags;
+	const struct dax_operations *ops;
+};
+#define FS_SIZE (1ULL << 24)
 static int nova_get_block_info(struct super_block *sb,
 	struct nova_sb_info *sbi)
 {
@@ -95,7 +111,9 @@ static int nova_get_block_info(struct super_block *sb,
 #endif
 	long size;
 
-	if (!sb->s_bdev->bd_disk->fops->direct_access) {
+    struct dax_device *dax_dev = fs_dax_get_by_bdev(sb->s_bdev);
+    
+	if (!dax_dev->ops->direct_access) {
 		nova_err(sb, "device does not support DAX\n");
 		return -EINVAL;
 	}
@@ -103,8 +121,8 @@ static int nova_get_block_info(struct super_block *sb,
 	sbi->s_bdev = sb->s_bdev;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
-	size = sb->s_bdev->bd_disk->fops->direct_access(sb->s_bdev,
-					0, &virt_addr, &__pfn_t);
+	size = dax_dev->ops->direct_access(dax_dev,
+					0, FS_SIZE, &virt_addr, &__pfn_t);
 #else
 	size = sb->s_bdev->bd_disk->fops->direct_access(sb->s_bdev,
 					0, &virt_addr, &pfn);
@@ -830,7 +848,7 @@ static struct inode *nova_alloc_inode(struct super_block *sb)
 	if (!vi)
 		return NULL;
 
-	vi->vfs_inode.i_version = 1;
+	inode_set_iversion_raw(&(vi->vfs_inode), 1);
 
 	return &vi->vfs_inode;
 }
