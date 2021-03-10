@@ -99,7 +99,7 @@ struct dax_device {
 	unsigned long flags;
 	const struct dax_operations *ops;
 };
-#define FS_SIZE (1ULL << 24)
+#define FS_SIZE (1ULL << 25)
 static int nova_get_block_info(struct super_block *sb,
 	struct nova_sb_info *sbi)
 {
@@ -123,6 +123,7 @@ static int nova_get_block_info(struct super_block *sb,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	size = dax_dev->ops->direct_access(dax_dev,
 					0, FS_SIZE, &virt_addr, &__pfn_t);
+    size *= PAGE_SIZE;
 #else
 	size = sb->s_bdev->bd_disk->fops->direct_access(sb->s_bdev,
 					0, &virt_addr, &pfn);
@@ -339,7 +340,7 @@ static struct nova_inode *nova_init(struct super_block *sb,
 		return ERR_PTR(-EINVAL);
 	}
    // printk("nova_init reserved_blocks=%ul, sbi->reserved_blocks=%ul\n",
-                                        reserved_blocks, sbi->reserved_blocks);
+//                                        reserved_blocks, sbi->reserved_blocks);
 
 	nova_dbg_verbose("max file name len %d\n", (unsigned int)NOVA_NAME_LEN);
 
