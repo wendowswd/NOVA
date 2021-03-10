@@ -88,13 +88,14 @@ int nova_init_inode_table(struct super_block *sb)
 		inode_table = nova_get_inode_table(sb, i);
 		if (!inode_table)
 			return -EINVAL;
-
+        printk("init inode table");
 		allocated = nova_new_log_blocks(sb, pi, &blocknr, 1, 1);
 		nova_dbg_verbose("%s: allocate log @ 0x%lx\n", __func__,
 							blocknr);
+        printk("init inode table before, allocated=%d, blocknr=%d\n",allocated, blocknr);
 		if (allocated != 1 || blocknr == 0)
 			return -ENOSPC;
-
+        printk("init inode table after, allocated=%d, blocknr=%d\n",allocated, blocknr);
 		block = nova_get_block_off(sb, blocknr, NOVA_BLOCK_TYPE_2M);
 		inode_table->log_head = block;
 		nova_flush_buffer(inode_table, CACHELINE_SIZE, 0);

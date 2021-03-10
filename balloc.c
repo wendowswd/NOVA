@@ -525,7 +525,7 @@ static int nova_new_blocks(struct super_block *sb, unsigned long *blocknr,
 	num_blocks = num * nova_get_numblocks(btype);
 	if (num_blocks == 0)
 		return -EINVAL;
-
+    //printk("new blocks, num_blocks=%lu",num_blocks);
 	cpuid = smp_processor_id();
 
 retry:
